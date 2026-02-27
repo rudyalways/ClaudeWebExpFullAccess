@@ -7,7 +7,7 @@ This file provides guidance for AI assistants (Claude Code and similar tools) wo
 **Name:** ClaudeWebExpFullAccess
 **Purpose:** A repository configured for full-access Claude Code on the web sessions.
 
-This is a fresh repository — no application code exists yet. As the project evolves, update this file to reflect the actual codebase structure, tech stack, and conventions.
+This repository contains the **Presentation Agent** — a recursive multi-agent system that generates beautiful HTML presentations (like PowerPoint) using Claude.
 
 ---
 
@@ -15,12 +15,21 @@ This is a fresh repository — no application code exists yet. As the project ev
 
 ```
 .
-├── CLAUDE.md                  # This file — AI assistant guidance
+├── CLAUDE.md                        # This file — AI assistant guidance
+├── main.py                          # CLI entry point
+├── requirements.txt                 # Python dependencies
+├── presentation_agent/              # Core Python package
+│   ├── __init__.py                  # Package exports
+│   ├── models.py                    # Pydantic data models (AreaSpec, AgentResult, …)
+│   ├── prompts.py                   # Prompt templates + Anthropic tool schemas
+│   ├── agent.py                     # Recursive AgentTeam (PlannerAgent + ContentAgent + ComposerAgent)
+│   ├── presentation.py              # Top-level PresentationAgent orchestrator
+│   └── renderer.py                  # Pure-Python HTML assembler
 ├── .claude/
-│   ├── settings.json          # Claude Code configuration (hooks, permissions)
+│   ├── settings.json                # Claude Code configuration (hooks, permissions)
 │   └── hooks/
-│       └── session-start.sh   # SessionStart hook: installs dependencies on session start
-└── (source code to be added)
+│       └── session-start.sh         # SessionStart hook: installs dependencies on session start
+└── (future: tests/, examples/, docs/)
 ```
 
 ---
@@ -75,47 +84,66 @@ A `SessionStart` hook is configured in `.claude/settings.json`. It runs `.claude
 
 ---
 
-## Adding a Tech Stack
+## Tech Stack
 
-When you add code to this repository, update this file with:
-
-1. **Tech stack:** Language, framework, runtime version
-2. **Install command:** How to install dependencies
-3. **Run command:** How to start the dev server / application
-4. **Test command:** How to run the test suite
-5. **Lint command:** How to run linters / formatters
-6. **Build command:** How to produce a production build
-
-Example (Node.js/TypeScript project):
+- **Language:** Python 3.11+
+- **LLM provider:** Anthropic Claude (`claude-sonnet-4-6`) via `anthropic` Python SDK
+- **Data validation:** Pydantic v2
+- **Concurrency:** `asyncio` + `asyncio.gather` for parallel agent execution
 
 ```bash
 # Install
-npm install
+pip install -r requirements.txt
 
-# Dev server
-npm run dev
+# Generate a demo presentation (needs ANTHROPIC_API_KEY)
+python main.py --example
 
-# Tests
-npm test
+# Custom brief
+python main.py --title "My Talk" --slides 5 --style modern-dark --output out.html
 
-# Lint
-npm run lint
-
-# Build
-npm run build
+# Open result
+open out.html   # macOS
+xdg-open out.html  # Linux
 ```
 
 ---
 
-## Key Conventions (to be filled in)
+## Agent Architecture
 
-As development begins, document decisions here:
+The system is a **recursive multi-agent tree** (max depth 4):
 
-- **Code style:** (e.g., Prettier + ESLint, Black + Ruff, rustfmt)
-- **Testing framework:** (e.g., Jest, pytest, cargo test)
-- **Environment variables:** List required env vars and their purpose
-- **Database / storage:** Connection patterns, migration workflow
-- **API conventions:** REST/GraphQL patterns, error format, auth method
+```
+PresentationAgent (root)
+└── SlideSpec × N  ─────────── one Claude call plans all slides
+    └── AgentTeam (depth=0)   ─ one team per slide, all run in parallel
+        ├── PlannerAgent      ─ Claude call: subdivide vs. leaf?
+        ├── AgentTeam × 2-9   ─ child teams, all run in parallel (depth=1)
+        │   ├── PlannerAgent
+        │   ├── AgentTeam × 2-9  (depth=2)
+        │   │   └── …            (depth=3 → strong leaf preference)
+        │   │       └── LeafAgent (depth=4, always leaf)
+        │   └── ComposerAgent  ─ pure Python, CSS absolute positioning
+        └── ComposerAgent
+```
+
+**Agent roles:**
+- `PlannerAgent` — Calls Claude (tool_use) to decide: orchestrate or leaf?
+- `ContentAgent` — Calls Claude (tool_use) to generate inline HTML/SVG
+- `ComposerAgent` — Pure Python: wraps children in `position:absolute` divs
+
+**Output format:** Each agent returns embeddable HTML or inline SVG. Parents
+compose children with CSS percentage-based absolute positioning.
+
+---
+
+## Key Conventions
+
+- **Code style:** PEP 8, type hints throughout, Pydantic models for all data
+- **Async:** All agent methods are `async def`; use `asyncio.gather` for parallelism
+- **Tool use:** Claude structured outputs via Anthropic tool_use (never raw JSON parsing)
+- **Environment variables:**
+  - `ANTHROPIC_API_KEY` — required (set in shell or `.env` not committed)
+- **No external CSS/fonts** in generated slides — fully self-contained HTML output
 
 ---
 
