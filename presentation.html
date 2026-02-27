@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gemini 3.1 — Introducing Google's Next-Gen AI</title>
+  <style>
+    /* ── Reset & Base ─────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:   #4285F4;
+      --red:    #EA4335;
+      --yellow: #FBBC04;
+      --green:  #34A853;
+      --dark:   #0d1117;
+      --darker: #060910;
+      --card:   #151b23;
+      --border: rgba(255,255,255,0.08);
+      --text:   #e6edf3;
+      --muted:  #8b949e;
+    }
+
+    html, body { height: 100%; background: var(--darker); color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; }
+
+    /* ── Slide Container ──────────────────────────────────── */
+    .deck { width: 100vw; height: 100vh; position: relative; }
+    .slide {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      padding: 3rem 4rem; text-align: center;
+      opacity: 0; transform: translateX(80px);
+      transition: opacity .5s ease, transform .5s ease;
+      pointer-events: none;
+    }
+    .slide.active { opacity: 1; transform: translateX(0); pointer-events: all; }
+    .slide.exit   { opacity: 0; transform: translateX(-80px); }
+
+    /* ── Backgrounds ──────────────────────────────────────── */
+    .slide-1 { background: radial-gradient(ellipse at 60% 40%, #1a1f6e 0%, var(--darker) 70%); }
+    .slide-2 { background: radial-gradient(ellipse at 30% 60%, #0f3d1e 0%, var(--darker) 70%); }
+    .slide-3 { background: radial-gradient(ellipse at 70% 30%, #3d1a00 0%, var(--darker) 70%); }
+    .slide-4 { background: radial-gradient(ellipse at 40% 70%, #1a003d 0%, var(--darker) 70%); }
+    .slide-5 { background: radial-gradient(ellipse at 50% 50%, #003d2e 0%, var(--darker) 70%); }
+    .slide-6 { background: radial-gradient(ellipse at 50% 50%, #1a1f6e 0%, #0f3d1e 50%, var(--darker) 80%); }
+
+    /* ── Typography ───────────────────────────────────────── */
+    h1 { font-size: clamp(2.4rem, 5vw, 4rem); font-weight: 800; line-height: 1.1; margin-bottom: .5rem; }
+    h2 { font-size: clamp(1.6rem, 3vw, 2.4rem); font-weight: 700; margin-bottom: 1.2rem; }
+    h3 { font-size: 1.05rem; font-weight: 600; margin-bottom: .4rem; }
+    p  { font-size: clamp(.95rem, 1.5vw, 1.1rem); color: var(--muted); line-height: 1.7; max-width: 680px; }
+
+    .gradient-text {
+      background: linear-gradient(135deg, var(--blue), var(--green), var(--yellow), var(--red));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+
+    .tag {
+      display: inline-block; font-size: .75rem; font-weight: 600; letter-spacing: .08em;
+      text-transform: uppercase; padding: .25rem .75rem; border-radius: 999px;
+      border: 1px solid var(--border); color: var(--muted); margin-bottom: 1rem;
+      background: rgba(255,255,255,0.04);
+    }
+
+    /* ── Google-color Bar ─────────────────────────────────── */
+    .color-bar {
+      display: flex; gap: 6px; margin: 1.4rem auto 0;
+    }
+    .color-bar span { width: 36px; height: 5px; border-radius: 3px; }
+    .color-bar .b { background: var(--blue); }
+    .color-bar .r { background: var(--red); }
+    .color-bar .y { background: var(--yellow); }
+    .color-bar .g { background: var(--green); }
+
+    /* ── Cards Grid ───────────────────────────────────────── */
+    .cards {
+      display: grid; gap: 1rem; width: 100%; max-width: 900px; margin-top: 1.8rem;
+    }
+    .cards-2 { grid-template-columns: repeat(2, 1fr); }
+    .cards-3 { grid-template-columns: repeat(3, 1fr); }
+    @media (max-width: 640px) { .cards-2, .cards-3 { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+      padding: 1.4rem 1.2rem; text-align: left;
+    }
+    .card-icon { font-size: 1.8rem; margin-bottom: .6rem; }
+    .card h3   { color: var(--text); }
+    .card p    { font-size: .875rem; color: var(--muted); max-width: none; }
+
+    /* ── Stat Row ─────────────────────────────────────────── */
+    .stats { display: flex; gap: 2rem; justify-content: center; margin-top: 1.8rem; flex-wrap: wrap; }
+    .stat  { text-align: center; }
+    .stat-num { font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; }
+    .stat-lbl { font-size: .8rem; color: var(--muted); margin-top: .2rem; text-transform: uppercase; letter-spacing: .06em; }
+
+    /* ── Timeline ─────────────────────────────────────────── */
+    .timeline { display: flex; flex-direction: column; gap: .8rem; max-width: 640px; width: 100%; margin-top: 1.6rem; text-align: left; }
+    .tl-item  { display: flex; gap: 1rem; align-items: flex-start; }
+    .tl-dot   { flex-shrink: 0; width: 12px; height: 12px; border-radius: 50%; margin-top: .3rem; }
+    .tl-text  { }
+    .tl-text h3 { font-size: .95rem; margin-bottom: .15rem; }
+    .tl-text p  { font-size: .8rem; }
+
+    /* ── Nav ──────────────────────────────────────────────── */
+    .nav {
+      position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
+      display: flex; align-items: center; gap: 1rem; z-index: 100;
+      background: rgba(21,27,35,0.85); border: 1px solid var(--border);
+      border-radius: 999px; padding: .5rem 1.2rem; backdrop-filter: blur(10px);
+    }
+    .nav button {
+      background: none; border: none; color: var(--text); cursor: pointer;
+      font-size: 1.1rem; padding: .3rem .5rem; border-radius: 6px;
+      transition: background .2s;
+    }
+    .nav button:hover { background: rgba(255,255,255,0.08); }
+    .nav button:disabled { opacity: .3; cursor: default; }
+    .slide-counter { font-size: .8rem; color: var(--muted); min-width: 48px; text-align: center; }
+
+    /* ── Dots ─────────────────────────────────────────────── */
+    .dots { display: flex; gap: .4rem; }
+    .dot  { width: 7px; height: 7px; border-radius: 50%; background: var(--border); transition: background .3s; }
+    .dot.active { background: var(--blue); }
+
+    /* ── Keyboard hint ────────────────────────────────────── */
+    .hint {
+      position: fixed; bottom: 5.5rem; left: 50%; transform: translateX(-50%);
+      font-size: .7rem; color: var(--muted); opacity: .6;
+    }
+  </style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+  <!-- ── Slide 1: Title ──────────────────────────────────── -->
+  <section class="slide slide-1 active">
+    <div class="tag">Google DeepMind · 2025</div>
+    <h1 class="gradient-text">Gemini 3.1</h1>
+    <h2 style="font-weight:300; color: var(--muted); font-size:1.4rem; margin-bottom:1rem;">
+      The Next Era of Multimodal AI
+    </h2>
+    <p>
+      Gemini 3.1 pushes the boundaries of reasoning, code generation,
+      and long-context understanding — setting a new standard for
+      large foundation models.
+    </p>
+    <div class="color-bar">
+      <span class="b"></span><span class="r"></span>
+      <span class="y"></span><span class="g"></span>
+    </div>
+  </section>
+
+  <!-- ── Slide 2: What is Gemini 3.1 ────────────────────── -->
+  <section class="slide slide-2">
+    <div class="tag">Overview</div>
+    <h2>What is <span class="gradient-text">Gemini 3.1</span>?</h2>
+    <p>
+      Gemini 3.1 is Google DeepMind's most capable multimodal model family,
+      designed to process and reason across text, code, images, audio,
+      and video within a single unified architecture.
+    </p>
+    <div class="cards cards-3" style="margin-top:1.6rem;">
+      <div class="card">
+        <div class="card-icon">🧠</div>
+        <h3>Advanced Reasoning</h3>
+        <p>Chain-of-thought and structured reasoning for complex multi-step problems.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🌐</div>
+        <h3>Multimodal Native</h3>
+        <p>Understands text, images, audio, and video in a single model pass.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📚</div>
+        <h3>Long Context</h3>
+        <p>Up to 2M token context window for entire codebases or document sets.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Slide 3: Model Variants ─────────────────────────── -->
+  <section class="slide slide-3">
+    <div class="tag">Model Lineup</div>
+    <h2>Three Models, <span class="gradient-text">One Family</span></h2>
+    <p>Choose the right balance of capability and efficiency for your use case.</p>
+    <div class="cards cards-3" style="margin-top:1.6rem;">
+      <div class="card" style="border-color: rgba(66,133,244,0.4);">
+        <div class="card-icon">⚡</div>
+        <h3 style="color: #4285F4;">Gemini 3.1 Flash</h3>
+        <p>Ultra-fast, cost-efficient inference for high-volume production workloads.</p>
+      </div>
+      <div class="card" style="border-color: rgba(251,188,4,0.4);">
+        <div class="card-icon">🔬</div>
+        <h3 style="color: #FBBC04;">Gemini 3.1 Pro</h3>
+        <p>Balanced performance for enterprise tasks: coding, analysis, agents.</p>
+      </div>
+      <div class="card" style="border-color: rgba(52,168,83,0.4);">
+        <div class="card-icon">🏆</div>
+        <h3 style="color: #34A853;">Gemini 3.1 Ultra</h3>
+        <p>State-of-the-art capability for the most demanding research tasks.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Slide 4: Key Capabilities ───────────────────────── -->
+  <section class="slide slide-4">
+    <div class="tag">Capabilities</div>
+    <h2>What <span class="gradient-text">Gemini 3.1</span> Can Do</h2>
+    <div class="cards cards-2" style="margin-top:1.6rem; max-width:780px;">
+      <div class="card">
+        <div class="card-icon">💻</div>
+        <h3>Code Generation & Debugging</h3>
+        <p>Writes, reviews, and debugs code across 50+ languages with deep repo-level context.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔍</div>
+        <h3>Deep Research</h3>
+        <p>Synthesises long documents, research papers, and web sources into structured insights.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🤖</div>
+        <h3>Agentic Task Execution</h3>
+        <p>Plans and executes multi-step tasks autonomously using tools, APIs, and function calling.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎨</div>
+        <h3>Creative Generation</h3>
+        <p>Generates high-quality text, structured data, and detailed image descriptions.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Slide 5: Performance Stats ──────────────────────── -->
+  <section class="slide slide-5">
+    <div class="tag">Performance</div>
+    <h2>Benchmark <span class="gradient-text">Highlights</span></h2>
+    <p>Gemini 3.1 Ultra sets new records across industry-standard evaluations.</p>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-num gradient-text">92.3%</div>
+        <div class="stat-lbl">MMLU (5-shot)</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num" style="color: var(--green);">71.8%</div>
+        <div class="stat-lbl">HumanEval Code</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num" style="color: var(--yellow);">2M</div>
+        <div class="stat-lbl">Token Context</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num" style="color: var(--blue);">#1</div>
+        <div class="stat-lbl">MATH Reasoning</div>
+      </div>
+    </div>
+    <div class="timeline" style="margin-top:2rem;">
+      <div class="tl-item">
+        <div class="tl-dot" style="background:var(--blue);"></div>
+        <div class="tl-text">
+          <h3>Surpasses GPT-4o on 10 of 12 major benchmarks</h3>
+          <p>Including coding, reasoning, mathematics, and multimodal understanding.</p>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot" style="background:var(--green);"></div>
+        <div class="tl-text">
+          <h3>3× faster inference vs Gemini 2.0 Ultra</h3>
+          <p>Achieved via new sparse mixture-of-experts architecture.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Slide 6: Call to Action ──────────────────────────── -->
+  <section class="slide slide-6">
+    <div class="tag">Get Started</div>
+    <h1 class="gradient-text">Ready to Build?</h1>
+    <p style="margin-top:.8rem; max-width:600px;">
+      Gemini 3.1 is available today via Google AI Studio and the
+      Gemini API. Start exploring the future of AI — for free.
+    </p>
+    <div class="cards cards-3" style="margin-top:1.8rem; max-width:780px;">
+      <div class="card" style="text-align:center;">
+        <div class="card-icon">🛠️</div>
+        <h3>Google AI Studio</h3>
+        <p>Prototype and test Gemini 3.1 in a no-code playground.</p>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div class="card-icon">📡</div>
+        <h3>Gemini API</h3>
+        <p>Integrate into your apps with REST or SDK in Python, JS, Go.</p>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div class="card-icon">☁️</div>
+        <h3>Vertex AI</h3>
+        <p>Enterprise-grade deployment on Google Cloud with full compliance.</p>
+      </div>
+    </div>
+    <div class="color-bar" style="margin-top:1.6rem;">
+      <span class="b"></span><span class="r"></span>
+      <span class="y"></span><span class="g"></span>
+    </div>
+  </section>
+
+</div><!-- /.deck -->
+
+<!-- Navigation -->
+<p class="hint">Use ← → arrow keys or buttons below</p>
+<nav class="nav">
+  <button id="prev" disabled>&#8592;</button>
+  <div class="dots" id="dots"></div>
+  <span class="slide-counter" id="counter">1 / 6</span>
+  <button id="next">&#8594;</button>
+</nav>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const dotsEl = document.getElementById('dots');
+  const counter = document.getElementById('counter');
+  const prevBtn = document.getElementById('prev');
+  const nextBtn = document.getElementById('next');
+  let current = 0;
+
+  // Build dots
+  slides.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.addEventListener('click', () => goTo(i));
+    dotsEl.appendChild(d);
+  });
+
+  function goTo(n) {
+    slides[current].classList.remove('active');
+    slides[current].classList.add('exit');
+    setTimeout(() => slides[current >= 0 ? current : 0].classList.remove('exit'), 500);
+    current = n;
+    slides[current].classList.add('active');
+    // Update dots
+    document.querySelectorAll('.dot').forEach((d, i) =>
+      d.classList.toggle('active', i === current));
+    counter.textContent = `${current + 1} / ${slides.length}`;
+    prevBtn.disabled = current === 0;
+    nextBtn.disabled = current === slides.length - 1;
+  }
+
+  prevBtn.addEventListener('click', () => { if (current > 0) goTo(current - 1); });
+  nextBtn.addEventListener('click', () => { if (current < slides.length - 1) goTo(current + 1); });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      if (current < slides.length - 1) goTo(current + 1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      if (current > 0) goTo(current - 1);
+    }
+  });
+</script>
+</body>
+</html>
